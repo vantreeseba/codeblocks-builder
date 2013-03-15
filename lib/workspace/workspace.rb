@@ -1,22 +1,30 @@
-class Workspace
-	def buildWorkspace(workspace_name)				
-		projects = getProjects(workspace_name)		
+require 'xml/xml.rb'
+require 'project/project.rb'
+
+class CodeBlocks::Workspace
+	attr_accessor :path
+	attr_accessor :name
+	attr_accessor :xml
+
+	def initialize(name)		
+		@name = name
 		
-		projects.each { |project| buildProject project }			
+		@xml = CodeBlocks::XmlParser.getXML @name		
+	end
+
+	def build()						
+		projects.each { |project| project.build }			
 	end
 	
-	def linkWorkspace(workspace_name)			
-		projects = getProjects(workspace_name)		
-		
-		projects.each { |project| linkProject project }		
+	def link()					
+		projects.each { |project| project.link }		
 	end
 	
-	def getProjects(workspace_file_name)	
-		workspace_xml = getXML(workspace_file_name)
-		
-		projects = workspace_xml.css("Project")
-		project_files = projects.map { |proj| proj.attr("filename")}
-		
-		return project_files
+	def projectNames
+		@xml.css("Project").map { |proj| @path + proj.attr("filename")}
+	end
+
+	def projects
+		projectNames.map { |name| CodeBlocks::Project.new name }
 	end
 end

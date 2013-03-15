@@ -1,0 +1,10 @@
+require 'codeblocks-builder'
+
+task :default do
+	puts "hello"
+end
+
+task :build do
+	builder = CodeBlocks.new
+	builder.Build
+end

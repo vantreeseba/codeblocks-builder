@@ -1,42 +1,26 @@
-require 'rake'
-include Rake::DSL
+require 'xml/ProjectXmlParser.rb'
+require 'compiler/compiler.rb'
 
-class Project
-	def buildProject(project)		
-		units = getProjectUnits(project)						
-		options = buildCompilerOptions(project).join(" ");
-					
-		units.each{ |unit|			
-			mkdir_p "obj\\" + unit.split("\\")[0..-2].join("\\"), :verbose => false			
-			sh "g++ #{options} -c #{unit} -o obj\\#{unit}.o" 
-		}	
-	end
-	
-	def linkProject(project)
-		units = getProjectUnits(project).map{ |unit|
-			"obj\\#{unit}.o"
-		}.join(" ")		
-		
-		options = buildLinkerOptions(project).join(" ");
-			
-		sh "ar rvs #{options} #{units}"
-	end
-	
-	def getProjectHeaders(project_file_name)
-		project_xml = getXML(project_file_name)
-		
-		units = project_xml.css("Unit")
-		unit_files = units.map { |unit| unit.attr("filename") }.select { |unit| unit.include? ".hpp" }
-		
-		return unit_files
+class CodeBlocks::Project
+	attr_accessor :name
+	attr_accessor :xml
+	attr_accessor :compiler
+	attr_accessor :units
+
+	def initialize(name,target = "Debug")
+		@name = name
+		@target = target
+
+		@xml = CodeBlocks::ProjectXmlParser.new name,target				
+
+		@compiler = CodeBlocks::Compiler.new "g++","g++",@xml.compilerFlags,@xml.objectOutput
 	end
 
-	def getProjectUnits(project_file_name)
-		project_xml = getXML(project_file_name)
-		
-		units = project_xml.css("Unit")
-		unit_files = units.map { |unit| unit.attr("filename") }.select { |unit| unit.include? ".cpp" }
-		
-		return unit_files
+	def build()										
+		@compiler.BuildFiles @xml.unitNames
+		@compiler.link  @xml.headerNames, @xml.unitNames, @xml.linkerFlags, OPTION_OUTPUT_TYPE_CONSOLE
 	end
+
+	def link()
+	end	
 end
